@@ -59,7 +59,7 @@ void setup(){
         }
     }
 
-/*
+
 void repartir(){
     //se reparten 7 cartas a cada jugador y se mueve una carta a Last
     time_t t;
@@ -68,33 +68,37 @@ void repartir(){
     struct dirent* dEntrada;
     directorio = opendir("./Juego/Mazo");
 
-    char* cardL;
+    char** cardL;
+    cardL = (char**)malloc(108 * sizeof(char*))
+    
     int it = 0;
     while ((dEntrada = readdir(directorio))!= NULL){
-        cardL[it] = Entrada->d_name;
+        cardL[it] = dEntrada->d_name;
         it++;
     }
-
+    for(it = 0; it < 108; it++){
+        printf("%s\n", cardL[it]);
+    }
     //dEntrada = readdir(directorio);
     int carta, jugador;
     for(jugador = 1; jugador < 5; jugador++){
         for(carta = 0; carta < 7; carta++){
 
-            int r = rand()%108;
-            //system("mv ./Juego/Mazo/%s ./Juego/Jugador_%d", , jugador)
-            }
+            int r = rand()%108;x
+            system("mv ./Juego/Mazo/%s ./Juego/Jugador_%d", cardL[r], jugador)
         }
     }
-
 }
 
-*/
+
+
+
 
 int buscarPrevio(){
- 
+
     char opcion;
     int verificacion = 1;
-    
+
     while (verificacion == 1){
         if(opendir("Juego")){    // Asi se revisa el directorio completo del juego, sin necesidad de revisar cada una de las carpetas
             printf("Existen datos previos. Desea eliminarlos? (S|N):");
@@ -106,53 +110,59 @@ int buscarPrevio(){
             }
             else if (opcion == 'N'){
                 verificacion = 0;
-                printf("Se retomar? la partida guardada anteriormente");
+                printf("Se retomara la partida guardada anteriormente");
                 return 0;
             }
-            else printf("Entrada inv?lida.");
+            else printf("Entrada invalida.");
         }
         else return 0;
     }
-    return 0; // Nunca deber?a llegar a este punto.
+    return 0; // Nunca deberia llegar a este punto.
 }
 
 
-void terminarPartida(){
+int terminarPartida(){
     char opcion;
     int verificacion = 1;
-    
+
     while (verificacion == 1){
         printf("Desea guardar su partida? (S|N): ");
         scanf("%c", &opcion);
         if (opcion == 'S'){
-            printf("Se guardaran los datos de la partida\n");
-            system("mkdir -p Juego/gameIsSaved");
-            FILE* Dummy; 
-            Dummy = fopen("Juego/gameIsSaved/dummy.txt", "w");
-            fprintf(Dummy, "Hola, si me ves aqui es porque grabaste tu partida, y me aseguro que la carpeta exista.\nLogre mi mision! Yupy!");
+            printf("Se guardar?n los datos de la partida");
             verificacion = 0;
         }
         else if (opcion == 'N'){
             verificacion = 0;
-            printf("Se eliminaron los datos de la partida.\n");
+            printf("Se eliminaron los datos de la partida.");
             system("rm -r Juego");
-            return;
+            return 0;
         }
-        else printf("Entrada inv?lida.\n");
+        else printf("Entrada invalida.");
     }
-    return; // Nunca deber?a llegar a este punto.
+    return 0; // Nunca deber?a llegar a este punto.
 }
 
 int main(){
-    
+
     int restaurar = buscarPrevio();
     if (restaurar != 1){
         setup();
-        //repartir();
     }
-    
+
+    repartir();
+/*
+
+    puts("Se crearon los datos del juego"); /// Se borra eventualmente.
+    // Se crean todas las carpetas con las cartas.
+
+    puts("Eliminar datos? (Y|N)"); // Se muere todo :(
+    scanf("%c", &del);
+    if (del == 'S' || del == 'Y'){
+        system("rm -r Juego");
+    }
+*/
+
     terminarPartida();
-    
-    
     return 0;
 }
