@@ -64,19 +64,23 @@ void repartir(){
     time_t t;
     srand((unsigned) time(&t));
 
-
     struct dirent* dEntrada;
     directorio = opendir("./Juego/Mazo");
 
+    char* cardL;
+    int it = 0;
     while ((dEntrada = readdir(directorio))!= NULL){
-        printf("%s\n", dEntrada->d_name);
+        cardL[it] = Entrada->d_name;
+        it++;
+    }
 
     //dEntrada = readdir(directorio);
     int carta, jugador;
-    for(jugador = 0; jugador < 4; jugador++){
+    for(jugador = 1; jugador < 5; jugador++){
         for(carta = 0; carta < 7; carta++){
 
             int r = rand()%108;
+            //system("mv ./Juego/Mazo/%s ./Juego/Jugador_%d", , jugador)
             }
         }
     }
