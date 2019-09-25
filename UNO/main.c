@@ -35,7 +35,7 @@ void setup(){
         for (cantidad = 1; cantidad < 3; cantidad++){
             for (tipo = 0; tipo < 12; tipo++){
                 numero = cantidad + '0';
-                sprintf(buffer, "Juego/Mazo/%s %s (%c).txt", tipoCarta[tipo], colorCarta[color], numero);
+                sprintf(buffer, "Juego/Mazo/%s %s %c.txt", tipoCarta[tipo], colorCarta[color], numero);
                 carta = fopen(buffer, "w");
                 fclose(carta);
                 strcpy(buffer, "");
@@ -59,6 +59,7 @@ void setup(){
         }
     }
 
+/*
 void repartir(){
     //se reparten 7 cartas a cada jugador y se mueve una carta a Last
     time_t t;
@@ -87,20 +88,65 @@ void repartir(){
 
 }
 
-int main(){
-/*
-    char del;
-    if(opendir("Juego")){    // Asi se revisa el directorio completo del juego, sin necesidad de revisar cada una de las carpetas
-        puts("Existen datos previos. Desea eliminarlos? (S|N):");
-        scanf("%c", &del);
-        if (del == 'S' || del == 'Y'){
-            system("rm -r Juego");  // Se elimina la carpeta padre, y se muere todo lo que est? adentro. izi pizi.
-        }
-    }
 */
-    setup();
 
-    repartir();
+int buscarPrevio(){
+ 
+    char opcion;
+    int verificacion = 1;
+    
+    while (verificacion == 1){
+        if(opendir("Juego")){    // Asi se revisa el directorio completo del juego, sin necesidad de revisar cada una de las carpetas
+            printf("Existen datos previos. Desea eliminarlos? (S|N):");
+            scanf("%c", &opcion);
+            if (opcion == 'S'){
+                system("rm -r Juego");  // Se elimina la carpeta padre, y se muere todo lo que est? adentro. izi pizi.
+                verificacion = 0;
+                return 1;
+            }
+            else if (opcion == 'N'){
+                verificacion = 0;
+                printf("Se retomar? la partida guardada anteriormente");
+                return 0;
+            }
+            else printf("Entrada inv?lida.");
+        }
+        else return 0;
+    }
+    return 0; // Nunca deber?a llegar a este punto.
+}
+
+
+void terminarPartida(){
+    char opcion;
+    int verificacion = 1;
+    
+    while (verificacion == 1){
+        printf("Desea guardar su partida? (S|N): ");
+        scanf("%c", &opcion);
+        if (opcion == 'S'){
+            printf("Se guardar?n los datos de la partida");
+            verificacion = 0;
+        }
+        else if (opcion == 'N'){
+            verificacion = 0;
+            printf("Se eliminaron los datos de la partida.");
+            system("rm -r Juego");
+            return 0;
+        }
+        else printf("Entrada inv?lida.");
+    }
+    return 0; // Nunca deber?a llegar a este punto.
+}
+
+int main(){
+    
+    int restaurar = buscarPrevio();
+    if (restaurar != 1){
+        setup();
+        //repartir();
+    }
+
 /*
 
     puts("Se crearon los datos del juego"); /// Se borra eventualmente.
@@ -112,5 +158,7 @@ int main(){
         system("rm -r Juego");
     }
 */
+    
+    terminarPartida();
     return 0;
 }
