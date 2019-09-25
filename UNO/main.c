@@ -125,18 +125,22 @@ void terminarPartida(){
         printf("Desea guardar su partida? (S|N): ");
         scanf("%c", &opcion);
         if (opcion == 'S'){
-            printf("Se guardar?n los datos de la partida");
+            printf("Se guardaran los datos de la partida\n");
+            system("mkdir -p Juego/gameIsSaved");
+            FILE* Dummy; 
+            Dummy = fopen("Juego/gameIsSaved/dummy.txt", "w");
+            fprintf(Dummy, "Hola, si me ves aqui es porque grabaste tu partida, y me aseguro que la carpeta exista.\nLogre mi mision! Yupy!");
             verificacion = 0;
         }
         else if (opcion == 'N'){
             verificacion = 0;
-            printf("Se eliminaron los datos de la partida.");
+            printf("Se eliminaron los datos de la partida.\n");
             system("rm -r Juego");
-            return 0;
+            return;
         }
-        else printf("Entrada inv?lida.");
+        else printf("Entrada inv?lida.\n");
     }
-    return 0; // Nunca deber?a llegar a este punto.
+    return; // Nunca deber?a llegar a este punto.
 }
 
 int main(){
@@ -146,19 +150,9 @@ int main(){
         setup();
         //repartir();
     }
-
-/*
-
-    puts("Se crearon los datos del juego"); /// Se borra eventualmente.
-    // Se crean todas las carpetas con las cartas.
-
-    puts("Eliminar datos? (Y|N)"); // Se muere todo :(
-    scanf("%c", &del);
-    if (del == 'S' || del == 'Y'){
-        system("rm -r Juego");
-    }
-*/
     
     terminarPartida();
+    
+    
     return 0;
 }
