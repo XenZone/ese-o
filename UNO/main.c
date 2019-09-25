@@ -6,7 +6,6 @@
 #include <dirent.h>
 #include <time.h>
 
-
 DIR* directorio;
 
 void setup(){
@@ -113,77 +112,97 @@ void repartir(){
 }
 
 
-
-
-int buscarPrevio(){
-
+int buscarPrevio(int situacion){
+ 
     char opcion;
     int verificacion = 1;
 
-    while (verificacion == 1){
-        if(opendir("Juego")){    // Asi se revisa el directorio completo del juego, sin necesidad de revisar cada una de las carpetas
-            printf("Existen datos previos. Desea eliminarlos? (S|N):");
-            scanf("%c", &opcion);
+    if (situacion == 1){
+        while (verificacion == 1){
+            printf("Existe una partida anterior guardada. Desea continuarla? (S|N)");
+            scanf(" %c", &opcion);
+
             if (opcion == 'S'){
-                system("rm -r Juego");  // Se elimina la carpeta padre, y se muere todo lo que est? adentro. izi pizi.
-                verificacion = 0;
+                printf("Se retomaran los datos anteriores.");
                 return 1;
             }
             else if (opcion == 'N'){
-                verificacion = 0;
-                printf("Se retomara la partida guardada anteriormente");
+                printf("La partida ha sido eliminada.");
+                system("rm -r Juego");
                 return 0;
             }
-            else printf("Entrada invalida.");
+            else{
+                printf("Entrada invalida");
+            }
         }
-        else return 0;
     }
-    return 0; // Nunca deberia llegar a este punto.
-}
-
-
-int terminarPartida(){
-    char opcion;
-    int verificacion = 1;
-
-    while (verificacion == 1){
-        printf("Desea guardar su partida? (S|N): ");
-        scanf("%c", &opcion);
-        if (opcion == 'S'){
-            printf("Se guardaran los datos de la partida");
-            verificacion = 0;
+    
+    else{
+        while (verificacion == 1){
+            if(opendir("Juego")){    // Asi se revisa el directorio completo del juego, sin necesidad de revisar cada una de las carpetas
+                printf("La ultima partida no termino debidamente, y los datos de la partida siguen ahi. Desea eliminarlos? (S|N):\n");
+                scanf(" %c", &opcion);
+                if (opcion == 'S'){
+                    system("rm -r Juego");  // Se elimina la carpeta padre, y se muere todo lo que est? adentro. izi pizi.
+                    verificacion = 0;
+                    return 1;
+                }
+                else if (opcion == 'N'){
+                    verificacion = 0;
+                    printf("Se retomar? la partida guardada anteriormente");
+                    return 0;
+                }
+                else printf("Entrada inv?lida.");
+            }
+            else return 0;
         }
-        else if (opcion == 'N'){
-            verificacion = 0;
-            printf("Se eliminaron los datos de la partida.");
-            system("rm -r Juego");
-            return 0;
-        }
-        else printf("Entrada invalida.");
     }
     return 0; // Nunca deber?a llegar a este punto.
 }
 
-int main(){
 
-    int restaurar = buscarPrevio();
+void terminarPartida(){
+    char opcion;
+    int verificacion = 1;
+    
+    while (verificacion == 1){
+        printf("Desea guardar su partida? (S|N): ");
+        scanf(" %c", &opcion);
+        if (opcion == 'S'){
+            printf("Se guardaran los datos de la partida\n");
+            system("mkdir -p Juego/gameIsSaved");
+            FILE* Dummy; 
+            Dummy = fopen("Juego/gameIsSaved/dummy.txt", "w");
+            fprintf(Dummy, "Hola, si me ves aqui es porque grabaste tu partida, y me aseguro que la carpeta exista.\nLogre mi mision! Yupy!");
+            verificacion = 0;
+        }
+        else if (opcion == 'N'){
+            verificacion = 0;
+            printf("Se eliminaron los datos de la partida.\n");
+            system("rm -r Juego");
+            return;
+        }
+        else printf("Entrada inv?lida.\n");
+    }
+    return; // Nunca deber?a llegar a este punto.
+}
+
+int main(){
+    
+    int restaurar = 0;
+    if (opendir("Juego/gameIsSaved")){ 
+        restaurar = buscarPrevio(1);
+    }
+    else restaurar = buscarPrevio(2);
+    
     if (restaurar != 1){
         setup();
+        puts("3,..............................................\n");
         repartir();
     }
-
-/*
-
-    puts("Se crearon los datos del juego"); /// Se borra eventualmente.
-    // Se crean todas las carpetas con las cartas.
-
-    puts("Eliminar datos? (Y|N)"); // Se muere todo :(
-    scanf("%c", &del);
-    if (del == 'S' || del == 'Y'){
-        system("rm -r Juego");
-    }
-*/
-
+    
     terminarPartida();
+    
+    
     return 0;
 }
