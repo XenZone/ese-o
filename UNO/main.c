@@ -6,6 +6,7 @@
 #include <dirent.h>
 #include <time.h>
 
+
 DIR* directorio;
 
 void setup(){
@@ -61,7 +62,9 @@ void setup(){
 
 
 void repartir(){
+
     //se reparten 7 cartas a cada jugador y se mueve una carta a Last
+
     time_t t;
     srand((unsigned) time(&t));
 
@@ -69,27 +72,45 @@ void repartir(){
     directorio = opendir("./Juego/Mazo");
 
     char** cardL;
-    cardL = (char**)malloc(108 * sizeof(char*))
-    
+    cardL = (char**)malloc(108 * sizeof(char*));
+
     int it = 0;
-    while ((dEntrada = readdir(directorio))!= NULL){
+    //while ((dEntrada = readdir(directorio))!= NULL){
+    while (it < 108){
+        cardL[it] = (char*)malloc(50 * sizeof(char));
         cardL[it] = dEntrada->d_name;
         it++;
+
     }
     for(it = 0; it < 108; it++){
         printf("%s\n", cardL[it]);
     }
-    //dEntrada = readdir(directorio);
+
+
     int carta, jugador;
     for(jugador = 1; jugador < 5; jugador++){
         for(carta = 0; carta < 7; carta++){
 
-            int r = rand()%108;x
-            system("mv ./Juego/Mazo/%s ./Juego/Jugador_%d", cardL[r], jugador)
+            int r = rand()%108;
+
+            char comm[100] = "mv ./Juego/Mazo/";
+            char strJ[1];
+            *strJ = jugador + '0';
+
+            strcat(comm,cardL[r]);
+            strcat(comm,"./Juego/Jugador_");
+            strcat(comm,strJ);
+
+            system(comm);
         }
     }
-}
 
+    int i;
+    for(i = 0; i < 108; i++){
+        free(cardL[i]);
+    }
+    free(cardL);
+}
 
 
 
@@ -129,7 +150,7 @@ int terminarPartida(){
         printf("Desea guardar su partida? (S|N): ");
         scanf("%c", &opcion);
         if (opcion == 'S'){
-            printf("Se guardar?n los datos de la partida");
+            printf("Se guardaran los datos de la partida");
             verificacion = 0;
         }
         else if (opcion == 'N'){
@@ -148,9 +169,9 @@ int main(){
     int restaurar = buscarPrevio();
     if (restaurar != 1){
         setup();
+        repartir();
     }
 
-    repartir();
 /*
 
     puts("Se crearon los datos del juego"); /// Se borra eventualmente.
