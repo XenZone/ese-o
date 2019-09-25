@@ -7,6 +7,10 @@
 
 DIR* directorio;
 
+
+void 
+        
+
 void setup(){
     
     // recover() ->  Recuperar alguna partida anterior.
@@ -54,26 +58,8 @@ void setup(){
         sprintf(buffer, "Juego/Mazo/Comodin Negro %c", numero);       
         carta = fopen(buffer, "w");
         fclose(carta);
-        strcpy(buffer, "");
-        
-        
-        
+        strcpy(buffer, "");   
     }
-    
-    
-    //ineficiencia
-    /*mazo = {
-        r0, r1, r2, r3, r4m, r5, r6, r7, r8, r9, rp2, r1, r2, r3, r4m, r5, r6, r7, r8, r9, rp2, rR, rJ,
-        g0, g1, g2, g3, g4m, g5, g6, g7, g8, g9, gp2, g1, g2, g3, g4m, g5, g6, g7, g8, g9, gp2, gR, gJ,
-        b0, b1, b2, b3, b4m, b5, b6, b7, b8, b9, bp2, b1, b2, b3, b4m, b5, b6, b7, b8, b9, bp2, bR, bJ,
-        y0, y1, y2, y3, y4m, y5, y6, y7, y8, y9, yp2, y1, y2, y3, y4m, y5, y6, y7, y8, y9, yp2, yR, yJ,
-        Np4, Np4, Np4, Np4, Nc, Nc, Nc, Nc
-    }*/
-
-    //for(i = 0; i < 10; i++){
-        //archivos de texto de cartas : fwrite o write con system call?
-        //system()
-//    }
 }
 
 int main(){
