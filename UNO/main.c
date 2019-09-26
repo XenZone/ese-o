@@ -6,13 +6,13 @@
 #include <dirent.h>
 #include <time.h>
 
-
 typedef struct mazo{
     char cartas[108][50];
     int n_cartas;
 } mazo;
 
 DIR *directorio;
+
 
 void setup(){
 
@@ -37,8 +37,8 @@ void setup(){
     char buffer[35], numero, *tipoCarta[12] = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "+2", "Salto", "Reversa"}; // 2 de cada color
     int color, tipo, cantidad;                                                                                        // el 0 sale solo 1 vez
 
-    for (color = 1; color < 5; color++){
-        for (cantidad = 1; cantidad < 3; cantidad++){
+    for (color = 0; color < 4; color++){
+        for (cantidad = 0; cantidad < 2; cantidad++){
             for (tipo = 0; tipo < 12; tipo++){
                 numero = cantidad + '0';
                 sprintf(buffer, "Juego/Mazo/%s %s %c.txt", tipoCarta[tipo], colorCarta[color], numero);
@@ -90,28 +90,46 @@ mazo* leerMazo(){
 }
 
 
-void randPull(mazo* M, int jugador){
+void randPull(mazo* M, int opcion, int jugador){
 
-    int numC = M->n_cartas;
+    int numC = M->n_cartas - 1;
 
+//random seed
     time_t t;
     srand((unsigned) time(&t));
 
     int r = rand() % numC;
 
-    char comm[100] = "mv ./Juego/Mazo/";
-    char strJ[1];
-    *strJ = jugador + '0';
+    char comm[200] = "mv Juego/Mazo/'";
+    char strJ[2];
+    *strJ = jugador + '0';                  //numero de jugador en str
 
+    //char carta_cola[50], carta_rand[50];
+    //strcpy(carta_cola, M->cartas[numC]);
+    //strcpy(carta_rand, M->cartas[r]);
 
     strcat(comm, M->cartas[r]);
+    strcat(comm,"'");
 
-    strcpy(M->cartas[r],M->cartas[numC]);
+    strcpy(M->cartas[r], M->cartas[numC]);
 
     M->n_cartas--;
 
-    strcat(comm, " ./Juego/Jugador_");
-    strcat(comm, strJ);
+    switch(opcion) {
+        case 0:
+            strcat(comm, " Juego/Jugadores/Jugador_");
+            strcat(comm, strJ);
+            break;
+
+        case 1:
+            system("rm -f Juego/Last/*");
+            strcat(comm, " Juego/Last");
+            break;
+
+        default:
+            puts("opcion invalida");
+    }
+
     system(comm);
 }
 
@@ -120,16 +138,16 @@ int buscarPrevio(int situacion){
     char opcion;
     int verificacion = 1;
 
-    if (situacion == 1){    //??
+    if (situacion == 1){
         while (verificacion == 1){
             printf("Existe una partida anterior guardada. Desea continuarla? (S|N): ");
             scanf(" %c", &opcion);
 
-            if (opcion == 'S'){
+            if (opcion == 'S' || opcion == 's'){
                 printf("Se retomaran los datos anteriores.\n");
                 return 1;
             }
-            else if (opcion == 'N'){
+            else if (opcion == 'N' || opcion == 'n'){
                 printf("La partida ha sido eliminada.\n");
                 system("rm -r Juego");
                 return 0;
@@ -146,13 +164,13 @@ int buscarPrevio(int situacion){
             if(directorio){    // Asi se revisa el directorio completo del juego, sin necesidad de revisar cada una de las carpetas
                 printf("La ultima partida no termino debidamente, y los datos de la partida siguen ahi. Desea eliminarlos? (S|N):\n");
                 scanf(" %c", &opcion);
-                if (opcion == 'S'){
+                if (opcion == 'S' || opcion == 's'){
                     system("rm -r Juego");  // Se elimina la carpeta padre, y se muere todo lo que est? adentro. izi pizi.
                     verificacion = 0;
                     closedir(directorio);
                     return 0;
                 }
-                else if (opcion == 'N'){
+                else if (opcion == 'N' || opcion == 'n'){
                     verificacion = 0;
                     printf("Se retomara la partida guardada anteriormente\n");
                     closedir(directorio);
@@ -177,7 +195,7 @@ void terminarPartida(){
     while (verificacion == 1){
         printf("Desea guardar su partida? (S|N): ");
         scanf(" %c", &opcion);
-        if (opcion == 'S'){
+        if (opcion == 'S' || opcion == 's'){
             printf("Se guardaran los datos de la partida\n");
             system("mkdir -p Juego/gameIsSaved");
             FILE* Dummy;
@@ -186,7 +204,7 @@ void terminarPartida(){
             verificacion = 0;
             fclose(Dummy);
         }
-        else if (opcion == 'N'){
+        else if (opcion == 'N' || opcion == 'n'){
             verificacion = 0;
             printf("Se eliminaron los datos de la partida.\n");
             system("rm -r Juego");
@@ -194,31 +212,36 @@ void terminarPartida(){
         }
         else printf("Entrada invalida.\n");
     }
-    return; // Nunca deber?a llegar a este punto.
+    return; // Nunca deberia llegar a este punto.
 }
+
 
 int main(){
 
     int restaurar = 0;
     int jugador, carta;
+
     directorio = opendir("Juego/gameIsSaved");
     if (directorio){
         restaurar = buscarPrevio(1);
     }
     else restaurar = buscarPrevio(2);
-    closedir(directorio);
 
     if (restaurar != 1){
         setup();
     }
+    closedir(directorio);
 
     mazo *Mazo = leerMazo();
 
+    //manos iniciales
     for(jugador = 1; jugador <= 4; jugador++){
         for(carta = 0; carta < 7; carta++){
-            randPull(Mazo, jugador);
+            randPull(Mazo, 0, jugador);
         }
     }
+    //pozo
+    randPull(Mazo, 1, -1);
 
     terminarPartida();
     free(Mazo);
