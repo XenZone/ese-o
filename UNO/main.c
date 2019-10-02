@@ -11,22 +11,24 @@ typedef struct mazo{
     int n_cartas;
 } mazo;
 
+// Struct para el guardado de las cartas. Tiene espacio como para las 108 cartas del juego.
+
+
 DIR *directorio;
 
 
+
+/*
+ Funcion Setup:  No recibe ni retorna nada.
+ Genera el juego inicial, creando los directorios necesarios, junto con todas las cartas del mazo.
+ Se utiliza un directorio general para todo el juego, que es la carpeta "Juego"
+ */
 void setup(){
 
-    // recover() ->  Recuperar alguna partida anterior.
-    // execute() -> Correr el juego de la forma que se haya elegido.
-    // exit() ->  Salir del jeugo y preguntar save o no.
+    system("mkdir -p  Juego/Mazo");  // Directorio principal de las cartas
+    system("mkdir -p Juego/Last"); // Directorio con la ?ltima carta jugada
 
-    // La idea de usar mkdir -p es para crear subdirectorios.
-    // Si uno de los directorios en el camino no existe, los crea.
-
-    system("mkdir -p  Juego/Mazo");
-    system("mkdir -p Juego/Last");
-
-    system("mkdir -p Juego/Jugadores/Jugador_1");
+    system("mkdir -p Juego/Jugadores/Jugador_1");  // Directorios con las manos de cada Jugador
     system("mkdir -p Juego/Jugadores/Jugador_2");
     system("mkdir -p Juego/Jugadores/Jugador_3");
     system("mkdir -p Juego/Jugadores/Jugador_4");
@@ -37,9 +39,13 @@ void setup(){
     char buffer[35], numero, *tipoCarta[12] = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "+2", "Salto", "Reversa"}; // 2 de cada color
     int color, tipo, cantidad;                                                                                        // el 0 sale solo 1 vez
 
+    // En este ciclo se generan todas las cartas del mazo 
     for (color = 0; color < 4; color++){
-        for (cantidad = 0; cantidad < 2; cantidad++){
+        for (cantidad = 0; cantidad < 2; cantidad++){ // Ciclo para generar todas las cartas duplicadas.
             for (tipo = 0; tipo < 12; tipo++){
+                // La variable numero se utiliza para generar archivos iguales, ya que 2 archivos no pueden tener el mismo nombre
+                // por lo tanto, se generan archivos del tipo ["NumCarta ColorCarta Repeticion]
+                // como lo ser?a el caso de "1 Rojo 1" y "1 Rojo 2".
                 numero = cantidad + '0';
                 sprintf(buffer, "Juego/Mazo/%s %s %c.txt", tipoCarta[tipo], colorCarta[color], numero);
                 carta = fopen(buffer, "w");
@@ -47,12 +53,15 @@ void setup(){
                 strcpy(buffer, "");
             }
         }
+        
+        // Los 0 se generan solo 1 para cada color, por lo que quedan en el ciclo de m?s afuera
         strcpy(buffer, "");
         sprintf(buffer, "Juego/Mazo/0 %s.txt", colorCarta[color]);
         carta = fopen(buffer, "w");
         fclose(carta);
         strcpy(buffer, "");
 
+        // Las cartas +4 y comodines se crean 4 veces, pero sin ningun color.
         numero = color + '0';
         sprintf(buffer, "Juego/Mazo/+4 Negro %c", numero);
         carta = fopen(buffer, "w");
@@ -64,23 +73,27 @@ void setup(){
         fclose(carta);
         strcpy(buffer, "");
         }
+    printf("\n ***** Se crearon 108 cartas en el directorio Juego/Mazo.\n\n");
     }
 
 
-mazo* leerMazo(){
 
+mazo* leerMazo(){
+    // Se leen todas las cartas dentro del directorio Mazo
+    
     mazo *Mazo = malloc(sizeof(mazo));
     struct dirent *dir;
 
     int count = 0;
-    int index = 0;
     directorio = opendir("Juego/Mazo/.");
-
+    // se revizan todos los archivos bajo el directorio Juego/Mazo/
+    
     if (directorio){
         while ((dir = readdir(directorio)) != NULL){
             if ((strcmp(dir->d_name, ".") != 0 && (strcmp(dir->d_name, "..") != 0))){
                 strcpy(Mazo->cartas[count],dir->d_name);
                 count++;
+                // Se a?aden en el struct, recibiendo un indice entre [0-108]
             }
         }
         Mazo->n_cartas = count;
@@ -90,30 +103,24 @@ mazo* leerMazo(){
 }
 
 
-void randPull(mazo* M, int opcion, int jugador){
-
-    int numC = M->n_cartas - 1;
-
-//random seed
+void randPull(mazo* Mazo, int opcion, int jugador){
+    
     time_t t;
     srand((unsigned) time(&t));
 
-    int r = rand() % numC;
+    int r = rand() % Mazo->n_cartas;
 
     char comm[200] = "mv Juego/Mazo/'";
     char strJ[2];
-    *strJ = jugador + '0';                  //numero de jugador en str
+    *strJ = jugador + '0';
 
-    //char carta_cola[50], carta_rand[50];
-    //strcpy(carta_cola, M->cartas[numC]);
-    //strcpy(carta_rand, M->cartas[r]);
 
-    strcat(comm, M->cartas[r]);
-    strcat(comm,"'");
+    strcat(comm, Mazo->cartas[r]);
+    strcat(comm, "'");
 
-    strcpy(M->cartas[r], M->cartas[numC]);
+    strcpy(Mazo->cartas[r], Mazo->cartas[Mazo->n_cartas-1]);
 
-    M->n_cartas--;
+    Mazo->n_cartas = Mazo->n_cartas - 1;
 
     switch(opcion) {
         case 0:
@@ -134,7 +141,7 @@ void randPull(mazo* M, int opcion, int jugador){
 }
 
 
-int buscarPrevio(int situacion){
+int buscarPrevio(int situacion){ 
     char opcion;
     int verificacion = 1;
 
@@ -157,7 +164,7 @@ int buscarPrevio(int situacion){
             }
         }
     }
-
+    
     else{
         while (verificacion == 1){
             directorio = opendir("Juego");
@@ -191,14 +198,18 @@ int buscarPrevio(int situacion){
 void terminarPartida(){
     char opcion;
     int verificacion = 1;
-
+    
     while (verificacion == 1){
+        ///////////7
+        printf("Enviando 'S' se terminara el programa dejando los datos en sus respectivas carpetas\n");
+        printf("En la proxima partida se eliminara todo, y se iniciara de 0, ya que aun no esta del todo implementado.\n");
+        ////////////////
         printf("Desea guardar su partida? (S|N): ");
         scanf(" %c", &opcion);
         if (opcion == 'S' || opcion == 's'){
             printf("Se guardaran los datos de la partida\n");
             system("mkdir -p Juego/gameIsSaved");
-            FILE* Dummy;
+            FILE* Dummy; 
             Dummy = fopen("Juego/gameIsSaved/dummy.txt", "w");
             fprintf(Dummy, "Hola, si me ves aqui es porque grabaste tu partida, y me aseguro que la carpeta exista.\nLogre mi mision! Yupy!");
             verificacion = 0;
@@ -217,29 +228,30 @@ void terminarPartida(){
 
 
 int main(){
-
-    int restaurar = 0;
-    int jugador, carta;
-
-    directorio = opendir("Juego/gameIsSaved");
-    if (directorio){
-        restaurar = buscarPrevio(1);
-    }
-    else restaurar = buscarPrevio(2);
-
+ 
+    int restaurar = 0, jugador, carta;
+ 
+    //directorio = opendir("Juego/gameIsSaved");
+    //if (directorio){ 
+    //    restaurar = buscarPrevio(1);
+    //}
+    //else restaurar = buscarPrevio(2);
     if (restaurar != 1){
+        system("rm -r Juego");
         setup();
     }
     closedir(directorio);
 
     mazo *Mazo = leerMazo();
-
-    //manos iniciales
+    
     for(jugador = 1; jugador <= 4; jugador++){
         for(carta = 0; carta < 7; carta++){
             randPull(Mazo, 0, jugador);
         }
     }
+    
+    printf("\n***Se le han asignado 7 cartas a cada jugador, y se coloc? una carta en la carpeta 'Last'\n\n\n");
+    
     //pozo
     randPull(Mazo, 1, -1);
 
