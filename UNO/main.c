@@ -11,6 +11,12 @@ typedef struct mazo{
     int n_cartas;
 } mazo;
 
+
+// PIPES
+
+int pipes[4][2], procesos[4] = {0,0,0,0};
+char buffer[50];
+
 // Struct para el guardado de las cartas. Tiene espacio como para las 108 cartas del juego.
 
 
@@ -229,15 +235,21 @@ void terminarPartida(){
 
 int main(){
  
-    int restaurar = 0, jugador, carta;
+    int restaurar = 0, jugador, carta, index;
  
+    
+    for (index = 0 ; index < 4 ; index++){
+        pipe(pipes[0]);
+    }
+    
     //directorio = opendir("Juego/gameIsSaved");
     //if (directorio){ 
     //    restaurar = buscarPrevio(1);
     //}
     //else restaurar = buscarPrevio(2);
     if (restaurar != 1){
-        system("rm -r Juego");
+        directorio = opendir("Juego");
+        if (directorio) system("rm -r Juego");
         setup();
     }
     closedir(directorio);
@@ -255,7 +267,94 @@ int main(){
     //pozo
     randPull(Mazo, 1, -1);
 
-    terminarPartida();
+    int proceso, contador;  // Se crea un array para los PIDs de cada uno de los procesos
+    procesos[0] = getpid(); // la primera posicion del arreglo es el PID del padre
+    
+    for (contador = 0 ; contador < 3 ; contador++){
+        proceso = fork();
+        if (proceso == 0){
+            procesos[contador+1] = getpid();
+            break;
+        }
+        else procesos[contador+1] = proceso;
+    }
+    
+    
+    // CONFIGURACION DE PIPES
+    
+    if (getpid() == procesos[0]){   // Cierra los pipes que el padre no utiliza.
+        for (index = 1; index < 4 ; index++) close(pipes[index][0]);
+        close(pipes[0][1]);
+    }
+    
+    else if (getpid() == procesos[1]){  // Cierra los pipes que el hijo 1 no utiliza
+        for (index = 0 ; index < 4 ; index++){
+            if (index == 0) close(pipes[0][0]);
+            else if (index == 1) close(pipes[1][1]);
+            else{
+                close(pipes[index][0]);
+                close(pipes[index][1]);
+            }
+        }
+    }
+            
+    else if (getpid() == procesos[2]){ // Cierra los pipes que el hijo 2 no utiliza
+        for (index = 0 ; index < 4 ; index++){
+            if (index == 0) close(pipes[0][0]);
+            else if (index == 2) close(pipes[2][1]);
+            else{
+                close(pipes[index][0]);
+                close(pipes[index][1]);
+            }
+        }
+    }    
+
+    else if (getpid() == procesos[3]){  // Cierra los pipes que el hijo 3 no utiliza
+        for (index = 0 ; index < 4 ; index++){
+            if (index == 0) close(pipes[0][0]);
+            else if (index == 3) close(pipes[3][1]);
+            else{
+                close(pipes[index][0]);
+                close(pipes[index][1]);
+            }
+        }
+    }
+    
+    
+    //printf("%d\n", getpid());
+    
+    if (getpid() == procesos[1]){
+      //  printf("entro\n");
+        char string[] = "Soy el proceso 1\n";
+        write(pipes[0][1], string, strlen(string)+1);
+    }
+    
+    if (getpid() == procesos[2]){
+        char string[] = "Soy el proceso 2\n";
+        write(pipes[0][1], string, strlen(string)+1);
+    }
+    
+    if (getpid() == procesos[3]){
+        char string[] = "Soy el proceso 3\n";
+        write(pipes[0][1], string, strlen(string)+1);
+    }
+    
+    if (getpid() == procesos[0]){
+        for (index = 0; index < 3; index++){
+            int x = read(pipes[0][0], buffer, sizeof(buffer));
+            printf("String: %s", buffer);
+        }
+    }
+            
+    //sleep(4);
+    //printf(" %d: %d %d %d %d\n", getpid(), procesos[0], procesos[1], procesos[2], procesos[3]);
+    
+    
+    
+    
+        
+    //terminarPartida();
+    
     free(Mazo);
     return 0;
 }
