@@ -249,7 +249,7 @@ char* randPull(mazo* Mazo, int opcion, int jugador){
 }
 
 
-void Jugar(char infoCarta, int jugador, mazo* Mazo){
+jugada* Jugar(char *infoCarta, int jugador, mazo* Mazo){
     //infoCarta = color + tipo carta + numero + orientacion
     //ncartas : 0 = dont care, 1 = tiene 1 carta, 2 = ganó
     //tipo carta : 0 = numero, 1 = reversa, 2 = +2 o +4, 3 = comodin, 4 = bloqueo
@@ -426,8 +426,8 @@ void jugadorPrincipal(mazo *Mazo){
     char *primera = sintxt(primeraCarta);
     Jugada =  Jugar(primera, 0, Mazo);
     
-    if (((int)Jugada->n_eliminadas) > 0) eliminarCartas(Mazo, (int)(Jugada->n_eliminadas), (int)(Jugada->eliminadas));
-    int proxJugador = Jugada->parametros[5];
+    if (Jugada->n_eliminadas > 0) eliminarCartas(Mazo, Jugada->n_eliminadas, Jugada->eliminadas);
+    int proxJugador = Jugada->parametros[1];
     int jugadorActual = 0;
     
     int enPartida = 1;
@@ -435,10 +435,10 @@ void jugadorPrincipal(mazo *Mazo){
   
         if (proxJugador != 1){ // envia el struct de informacion con la jugada inicial.
             
-            jugadorActual = Jugada->parametros[5];
+            jugadorActual = Jugada->parametros[1];
             
-            write(pipes[proxJugador-1][1], Jugada);
-            write(pipes[proxJugador-1][1], Mazo);
+            write(pipes[proxJugador-1][1], Jugada, sizeof(jugada));
+            write(pipes[proxJugador-1][1], Mazo, sizeof(mazo));
 
             free(Jugada);
             free(Mazo);
@@ -446,23 +446,23 @@ void jugadorPrincipal(mazo *Mazo){
             read(pipes[0][0], Jugada, sizeof(jugada));
             read(pipes[0][0], Mazo, sizeof(mazo));
             
-            Jugada->parametros[6] = jugadorActual;
-            proxJugador = Jugada->parametros[5];
+            Jugada->parametros[2] = jugadorActual;
+            proxJugador = Jugada->parametros[1];
             
         } // Si el jugador que comienza no es del jugador 1
 
         else{  // proxJugador == 1
             
-            jugadorActual = Jugada->parametros[5];
+            jugadorActual = Jugada->parametros[1];
 
             Jugada = Jugar(Jugada->carta, 1, Mazo);
-            if (((int)Jugada->n_eliminadas) > 0) eliminarCartas(Mazo, (int)(Jugada->n_eliminadas), (int)(Jugada->eliminadas));
+            if (Jugada->n_eliminadas > 0) eliminarCartas(Mazo, Jugada->n_eliminadas, Jugada->eliminadas);
             
-            Jugada->parametros[6] = jugadorActual;
-            proxJugador = Jugada->parametros[5];
+            Jugada->parametros[2] = jugadorActual;
+            proxJugador = Jugada->parametros[1];
             
-            write(pipes[proxJugador-1][1], Jugada, );
-            write(pipes[proxJugador-1][1], Mazo);
+            write(pipes[proxJugador-1][1], Jugada, sizeof(jugada));
+            write(pipes[proxJugador-1][1], Mazo, sizeof(mazo));
             
             free(Jugada);
             free(Mazo);
@@ -492,26 +492,18 @@ void jugadorPC(){
         read(pipes[pipeJugador][0], Jugada, sizeof(jugada));
         read(pipes[pipeJugador][0], Mazo, sizeof(mazo));  // Recibe la informacion necesaria para jugar
         
-        if (Jugada->parametros[0] == 1){
+        if (Jugada->parametros[0] == 1)
             printf("P%d: El jugador %d tiene 1 carta!.\n", pipeJugador + 1, Jugada->parametros[6]);
-        }
-        
-        
-        int *datos = malloc(4*sizeof(int));
-        datos[0] = Jugada->parametros[1];
-        datos[1] = Jugada->parametros[2];
-        datos[2] = Jugada->parametros[3];
-        datos[3] = Jugada->parametros[4];
+
         free(Jugada);
         
-        jugada *nuevaJugada = Jugar(datos, pipeJugador + 1 ,Mazo);
-        if (((int)Jugada->n_eliminadas) > 0) eliminarCartas(Mazo, (int)(Jugada->n_eliminadas), (int)(Jugada->eliminadas));
+        jugada *nuevaJugada = Jugar(Jugada->carta, pipeJugador + 1 ,Mazo);
+        if (Jugada->n_eliminadas > 0) eliminarCartas(Mazo, Jugada->n_eliminadas, Jugada->eliminadas);
         
         
         write(pipes[0][1], Jugada, sizeof(jugada));
         write(pipes[0][1], Mazo, sizeof(mazo));
         
-        free(datos);
         free(nuevaJugada);
         free(Mazo);
         // Jugada es la que se recibe por el pipe como "informacion previa", mientras que nuevaJugada es la que resulta de este turno.
@@ -545,14 +537,14 @@ int main(){
     
     for(jugador = 1; jugador <= 4; jugador++){
         for(carta = 0; carta < 7; carta++){
-            randPull(Mazo, 0, jugador);
+            free(randPull(Mazo, 0, jugador));
         }
     }
     
     printf("\n\t***Se le han asignado 7 cartas a cada jugador, y se coloc? una carta en la carpeta 'Last'\n\n\n");
     
     //pozo
-    randPull(Mazo, 1, -1);
+    free(randPull(Mazo, 1, -1));
 
     int proceso, contador;  // Se crea un array para los PIDs de cada uno de los procesos
     procesos[0] = getpid(); // la primera posicion del arreglo es el PID del padre
