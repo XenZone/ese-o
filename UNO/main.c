@@ -107,51 +107,41 @@ mazo* leerMazo(){
     return Mazo;
 }
 
+//elimina .txt de nombre de archivo
+char* sintxt(char* cartaFile){
 
-void randPull(mazo* Mazo, int opcion, int jugador){
+    char *nombreCarta = malloc(50*sizeof(char));
+    strncpy(nombreCarta, cartaFile, strlen(cartaFile) - 4);
 
-    time_t t;
-    srand((unsigned) time(&t));
-
-    int r = rand() % Mazo->n_cartas;
-
-    char comm[100] = "mv Juego/Mazo/'";
-    char strJ[2] = "";
-    *strJ = jugador + '0';
-
-
-    strcat(comm, Mazo->cartas[r]);
-    strcat(comm, "'");
-
-    strcpy(Mazo->cartas[r], Mazo->cartas[Mazo->n_cartas-1]);
-
-    Mazo->n_cartas = Mazo->n_cartas - 1;
-
-    switch(opcion) {
-        case 0:
-            strcat(comm, " Juego/Jugadores/Jugador_");
-            strcat(comm, strJ);
-            break;
-z
-        case 1:
-            strcat(comm, " Juego/Last");
-            break;
-
-        default:
-            puts("opcion invalida");
-    }
-
-    system(comm);
+    return nombreCarta;
 }
 
+int esDigito(char* P){
+    int i;
+    for(i = 0; P[i]; i++){
+        if(P[i] < '0' || P[i] > '9'){
+            return 0;
+        }
+    }
+    return 1;
+}
 
-int analizarCarta(char* carta){
-    //carta: numero + color + repeticion
+char* analizarCarta(char* carta){
+    //carta: numero + color + numero de copia de archivo
 
     //infoCarta = color + tipo carta + numero + orientacion
+
     //ncartas : 0 = dont care, 1 = tiene 1 carta, 2 = ganó
-    //tipo carta : 0 = numero, 1 = reversa, 2 = +2 o +4, 3 = comodin, 4 = bloqueo
+    //tipo carta : 0 = numero, 1 = reversa, 2 = comodin, 3 = bloqueo, 4 = +2, 5 = +4
     //color : 0 = negro, 1 = rojo, 2 = azul, 3 = verde, 4 = amarillo
+
+
+    //se separan los elementos del string carta
+    char datosCarta[3][50] = {"","",""};
+    char aux[2] = "";
+    int c, z = 0;
+
+    for(c = 0; carta[c]; c++){
 
         if (carta[c] != ' '){
             aux[0] = carta[c];
@@ -164,34 +154,93 @@ int analizarCarta(char* carta){
         }
     }
 
+    //se interpretan los valores obtenidos
     int analisis = 0;
     char tipoCarta[6][10] = {"Numero", "Reversa", "Comodin", "Bloqueo", "+2", "+4"};
     char color[5][10] = {"Negro", "Rojo", "Azul", "Verde", "Amarillo"};
 
+
+    //tipo carta
     int i;
     for (i = 0; i < 6; i++){
-        if (isdigit(datosCarta[0]) > 0){
-            analisis += i * 10;
-        }
-        else if (strcmp(datosCarta[0], tipoCarta[i]) == 0){
-            if (i == 5){
-                i = 4;
-            }
+
+        if (strcmp(datosCarta[0], tipoCarta[i]) == 0){
             analisis += i * 100;
         }
     }
 
+    //tipo carta == numero
+    if (esDigito(datosCarta[0])){
+        analisis += (int)datosCarta[0][0] * 10;
+    }
+
+    //color
     for (i = 0; i < 5; i++){
+
         if (strcmp(datosCarta[1],color[i]) == 0){
+            printf("color: %s i: %d\n", datosCarta[1],i);
             analisis += i * 1000;
         }
     }
 
-    return analisis;
+    //orientacion
+    if (*datosCarta[1] == 1){
+        analisis += 1;
+    }
+
+    printf("%d\n", analisis);
+
+    char *analisisStr = malloc(5*sizeof(char));
+    *analisisStr = analisis + '0';
+
+    return analisisStr;
 }
 
 
-void Jugar(char infoCarta, int jugador/*, mazo* Mazo*/){
+char* randPull(mazo* Mazo, int opcion, int jugador){
+
+    time_t t;
+    srand((unsigned) time(&t));
+
+    int r = rand() % Mazo->n_cartas;
+
+    char comm[100] = "mv Juego/Mazo/'";
+    char strJ[2] = "";
+    *strJ = jugador + '0';
+
+    strcat(comm, Mazo->cartas[r]);
+    strcat(comm, "'");
+
+//retorna informacion de carta
+    char* nombreCarta = sintxt(Mazo->cartas[r]);
+    char* cartaPull = analizarCarta(nombreCarta);
+    free(nombreCarta);
+
+//se reemplaza carta sacada por ultima en arreglo
+    strcpy(Mazo->cartas[r], Mazo->cartas[Mazo->n_cartas-1]);
+
+    Mazo->n_cartas = Mazo->n_cartas - 1;
+
+    switch(opcion) {
+        case 0:
+            strcat(comm, " Juego/Jugadores/Jugador_");
+            strcat(comm, strJ);
+            break;
+
+        case 1:
+            strcat(comm, " Juego/Last");
+            break;
+
+        default:
+            puts("opcion invalida");
+    }
+
+    system(comm);
+    return cartaPull;
+}
+
+
+void Jugar(char infoCarta, int jugador, mazo* Mazo){
     //infoCarta = color + tipo carta + numero + orientacion
     //ncartas : 0 = dont care, 1 = tiene 1 carta, 2 = ganó
     //tipo carta : 0 = numero, 1 = reversa, 2 = +2 o +4, 3 = comodin, 4 = bloqueo
@@ -214,7 +263,7 @@ void Jugar(char infoCarta, int jugador/*, mazo* Mazo*/){
     strcat(dirMano, strj);
     directorio = opendir(dirMano);
 
-    mazo* Mano = (mazo*)malloc(sizeof(mazo));
+    mazo* Mano = malloc(sizeof(mazo));
 
 
     int i = 0;
@@ -223,25 +272,36 @@ void Jugar(char infoCarta, int jugador/*, mazo* Mazo*/){
             if ((strcmp(dir->d_name, ".") != 0 && (strcmp(dir->d_name, "..") != 0))){
 
             //eliminar .txt
-                char nombreCarta[50] = "";
-                strncpy(nombreCarta, dir->d_name, strlen(dir->d_name) - 4);
+                char* nombreCarta = sintxt(dir->d_name);
+                strcpy(Mano->cartas[i], nombreCarta);
 
-                Mano->cartas[i][0] = *nombreCarta;
+                printf("[%d] %s\n", i, Mano->cartas[i]);
 
-                printf("[%d] %s\n", i, nombreCarta);
-
+                free(nombreCarta);
                 //printf("Pozo: %s\n", );
                 i++;
             }
         }
     }
+    printf("[%d] %s\n", i + 1, "Sacar de mazo");
     closedir(directorio);
 
     //elegir carta
     puts("\nELEGIR CARTA (segun indice)\n");
+
     int opcion;
     scanf(" %d", &opcion);
 
+    if (opcion == i + 1){
+        char* cartaPull = randPull(Mazo, jugador, 0);
+        printf("Sacando de mazo... \n%s\n", cartaPull);
+    }
+
+/*struct jugada{
+char parametros[10];
+int n_eliminadas;
+int eliminadas[10];
+}*/
 
     //enviar pipe a padre con carta y n_jugador siguiente
     if (jugador == 0){
@@ -375,7 +435,8 @@ int main(){
 
 
     //Jugar(3, 1);
-    analizarCarta("3 verde 1");
+    analizarCarta("3 Verde 1");
+    analizarCarta("+2 Rojo 0");
 
     int proceso, contador;  // Se crea un array para los PIDs de cada uno de los procesos
     procesos[0] = getpid(); // la primera posicion del arreglo es el PID del padre
