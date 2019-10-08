@@ -362,12 +362,12 @@ jugada* Jugar(char *cartaLast, int jugador, mazo* Mazo){
             char* cartaAnalizada = analizarCarta(cartaPull);
             free(cartaPull);
 
-            if (cartaValida(cartaAnalizada, LastDatos)){
+            /*if (cartaValida(cartaAnalizada, LastDatos)){
 
             }
             else{
                 //retornar
-            }
+            }*/
             //chequear si puede hacer la jugada. Si no, pasa.
             opcionValida = 1;
 
