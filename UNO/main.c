@@ -7,6 +7,8 @@
 #include <time.h>
 
 char enter;
+int orientacion = 0;
+int nuevoColor;
 
 typedef struct info{
     int players[4];
@@ -24,12 +26,7 @@ typedef struct jugada{
     char carta[50];
 } jugada;
 
-/*
-typedef struct valida{
-    mazo* Mazo;
-    int siguienteJugador;
-} valida;
-*/
+
 
 // PIPES
 
@@ -63,7 +60,7 @@ void setup(){
     char buffer[35], numero, *tipoCarta[12] = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "+2", "Salto", "Reversa"}; // 2 de cada color
     int color, tipo, cantidad;                                                                                        // el 0 sale solo 1 vez
 
-    // En este ciclo se generan todas las cartas del mazo 
+    // En este ciclo se generan todas las cartas del mazo
     for (color = 0; color < 4; color++){
         for (cantidad = 0; cantidad < 2; cantidad++){ // Ciclo para generar todas las cartas duplicadas.
             for (tipo = 0; tipo < 12; tipo++){
@@ -77,7 +74,7 @@ void setup(){
                 strcpy(buffer, "");
             }
         }
-        
+
         // Los 0 se generan solo 1 para cada color, por lo que quedan en el ciclo de m?s afuera
         strcpy(buffer, "");
         sprintf(buffer, "Juego/Mazo/0 %s 0.txt", colorCarta[color]);
@@ -111,14 +108,14 @@ void setup(){
 
 mazo* leerMazo(){
     // Se leen todas las cartas dentro del directorio Mazo
-    
+
     mazo *Mazo = malloc(sizeof(mazo));
     struct dirent *dir;
 
     int count = 0;
     directorio = opendir("Juego/Mazo/.");
     // se revisan todos los archivos bajo el directorio Juego/Mazo/
-    
+
     if (directorio){
         while ((dir = readdir(directorio)) != NULL){
             if ((strcmp(dir->d_name, ".") != 0 && (strcmp(dir->d_name, "..") != 0))){
@@ -138,7 +135,7 @@ mazo* leerMazo(){
 char* sintxt(char* cartaFile){
 
     char *nombreCarta = malloc(50*sizeof(char));                                //MALLOC
-    
+
     char tmp1[50] = "";
     char tmp2[50] = "";
 
@@ -147,6 +144,17 @@ char* sintxt(char* cartaFile){
     sprintf(nombreCarta,"%s %s %c", nombreCarta, tmp1, tmp2[0]);
 
     return nombreCarta;
+}
+
+
+//Elimina el numero de repeticion de carta
+char* limpiarFormato(char* nombre){
+
+    char tmp1[20], tmp2[20], tmp3[5];
+    sscanf(nombre, "%s %s %s", tmp1, tmp2, tmp3);
+    sprintf(nombre, "%s %s", tmp1, tmp2);
+
+    return nombre;
 }
 
 
@@ -160,11 +168,10 @@ int esDigito(char* P){
     return 1;
 }
 
-
+//recibe el nombre de una cata (numero + color + numero de copia de archivo) y
+//retorna un string con un numero de 4 digitos que indica informacion
+//relevante (color + tipo carta + numero + orientacion)
 char* analizarCarta(char* carta){
-    //carta: numero + color + numero de copia de archivo
-
-    //infoCarta = color + tipo carta + numero + orientacion
 
     //ncartas : 0 = dont care, 1 = tiene 1 carta, 2 = ganó
     //tipo carta : 0 = numero, 1 = reversa, 2 = comodin, 3 = bloqueo, 4 = +2, 5 = +4
@@ -225,6 +232,7 @@ char* analizarCarta(char* carta){
     return analisisStr;
 }
 
+
 //carta random de mazo a jugador/Last. Retorna el nombre de la carta
 char* randPull(mazo* Mazo, int opcion, int jugador){
 
@@ -278,7 +286,7 @@ void pushCarta(mazo* Mano, int cartaIndex, int jugador){
 
     char comm[200] = "mv 'Juego/Jugadores/Jugador_";
     char player[2] = {jugador + '0','\0'};
-    
+
     sprintf(comm, "%s%s/%s.txt' Juego/Last", comm, player, Mano->cartas[cartaIndex]);
 
     system(comm);
@@ -290,7 +298,6 @@ int jugadaValida(mazo* Mazo, int jugador, int siguienteJugador, char* cartaDatos
     //negra
     if (cartaDatos[0] == '0'){
 
-        int nuevoColor;
         puts("Elegir nuevo color: \n");
         puts("[1] Rojo");
         puts("[2] Azul");
@@ -298,6 +305,7 @@ int jugadaValida(mazo* Mazo, int jugador, int siguienteJugador, char* cartaDatos
         puts("[4] Amarillo");
         scanf(" %d", &nuevoColor);
 
+        //+4
         if (cartaDatos[1] == '5'){
 
             int c;
@@ -306,46 +314,94 @@ int jugadaValida(mazo* Mazo, int jugador, int siguienteJugador, char* cartaDatos
             }
 
             siguienteJugador = jugador + 2;
-    }
+        }
 
+        //comodin
         else if (cartaDatos[1] == '2'){
-            
-            //comodin
+
             //no pasa nada en realidad jsj
         }
-        
+
         return siguienteJugador;
     }
 
-//Si se pone una carta que no cumpla esto, se debe robar una carta.
-    //colores
-    else if (cartaDatos[0] == LastDatos[0] || cartaDatos[2] == LastDatos[2]){
+//
 
-        if(cartaDatos[1] == '3'){
-            siguienteJugador = jugador + 2;
+//infoCarta = color + tipo carta + numero + orientacion
+//tipo carta : 0 = numero, 1 = reversa, 2 = comodin, 3 = bloqueo, 4 = +2, 5 = +4
+//color : 0 = negro, 1 = rojo, 2 = azul, 3 = verde, 4 = amarillo
+
+//Si se pone una carta que no cumpla esto, se debe robar una carta.
+    //colores o numero
+    else if (cartaDatos[0] == LastDatos[0] ||                           //color
+            cartaDatos[2] == LastDatos[2] ||                            //numero
+            (LastDatos[0] == '0' && cartaDatos[0] == nuevoColor)) {     //ultima carta comodin
+
+        printf("NC: %d\n", nuevoColor);
+
+        //Reversa
+        if (cartaDatos[1] == '1'){
+
+            if (orientacion == 0){
+
+                orientacion = -1;
+
+                if (jugador == 1) siguienteJugador = 4;
+                else siguienteJugador = jugador - 1;
+
+            }
+
+            else{
+
+                orientacion = 0;
+
+                if (jugador == 4) siguienteJugador = 1;
+                else siguienteJugador = jugador + 1;
+
+            }
         }
 
-        else if(cartaDatos[1] == '4'){
+        //Bloqueo
+        else if (cartaDatos[1] == '3'){
+            printf("%s\n", siguienteJugador);
+
+            if (orientacion == 0){
+
+                if (jugador < 3) siguienteJugador = jugador + 2;
+                else if (jugador == 3) siguienteJugador = 1;
+                else siguienteJugador = 2;
+
+            }
+
+            else{
+
+                if (jugador > 2) siguienteJugador = jugador - 2;
+                else if (jugador == 2) siguienteJugador = 4;
+                else siguienteJugador = 3;
+
+            }
+        }
+
+        //+2
+        else if (cartaDatos[1] == '4'){
             int c;
             for (c = 0; c < 2; c++){
                 randPull(Mazo, 0, siguienteJugador);
             }
         }
+        else{
 
-    else{
-            //reversa o cualquiera, pero no hay nada que hacer en ese caso
         }
 
         return siguienteJugador;
     }
 
     else return -1;
-
 }
 
 
 jugada* Jugar(char *cartaLast, int jugador, mazo* Mazo){
-    
+
     //infoCarta = color + tipo carta + numero + orientacion
     //ncartas : 0 = dont care, 1 = tiene 1 carta, 2 = ganó
     //tipo carta : 0 = numero, 1 = reversa, 2 = comodin, 3 = bloqueo, 4 = +2, 5 = +4
@@ -354,15 +410,21 @@ jugada* Jugar(char *cartaLast, int jugador, mazo* Mazo){
     //jugador == 0
     //dependiendo de condiciones enviar pipe a siguiente jugador o dejar jugar a 1
 
+
+    int siguienteJugador;
+
 //mano de jugador actual
     mazo* Mano = malloc(sizeof(mazo));
+
+    char cartasEliminadas[108][50];            //asignarle strings vacios???
+    int eliminadasIndex = 0;
 
 //struct a retornar
     jugada* J = malloc(sizeof(jugada));
     strcpy(J->carta, cartaLast);
 
-    char cartasEliminadas[108][50];            //asignarle strings vacios???
-    int eliminadasIndex = 0;
+    cartaLast = limpiarFormato(cartaLast);
+
 
     struct dirent *dir;
 
@@ -377,7 +439,6 @@ jugada* Jugar(char *cartaLast, int jugador, mazo* Mazo){
     if (jugador != 0) printf("\nUltima jugada: \n%s\n\n", cartaLast);
 
 //imprimir cartas de la mano y registrarlas en arreglo
-
     int i = 0;
     if (directorio){
         while ((dir = readdir(directorio)) != NULL){
@@ -386,7 +447,9 @@ jugada* Jugar(char *cartaLast, int jugador, mazo* Mazo){
                 char* nombreCarta = sintxt(dir->d_name);    //eliminar .txt
                 strcpy(Mano->cartas[i], nombreCarta);
 
-                printf(" [%d] %s\n", i, Mano->cartas[i]);
+                nombreCarta = limpiarFormato(nombreCarta);
+
+                printf(" [%d] %s\n", i, nombreCarta);
 
                 free(nombreCarta);
 
@@ -406,37 +469,25 @@ jugada* Jugar(char *cartaLast, int jugador, mazo* Mazo){
 //analisis ultima jugada
     char *LastDatos = analizarCarta(cartaLast);
 
-//orientacion (depende de ultima jugada)
-    int siguienteJugador;
-    
-    if (LastDatos[3] == '0'){
+//si la carta es reversa
+    if (LastDatos[3] == '0'){       //CONSULTAR //y tambien cuando sale un +2 no le afecta a Jugador1
 
-        if (jugador == 4) siguienteJugador = 1;
-        
-        else if (jugador == 0){
+        if (jugador == 0){
             free(Mano);
             J->parametros[0] = 1;
             J->parametros[1] = 1;
             return J;
         }
-        
-        else siguienteJugador = jugador + 1;
 
-    }
-    else{
+        else{
 
-        if (jugador == 1) siguienteJugador = 4;
-        
-        else if (jugador == 0){
-            free(Mano);
-            J->parametros[0] = 4;
-            J->parametros[1] = 4;
-            return J;
+            if (jugador == 0){
+                free(Mano);
+                J->parametros[0] = 4;
+                J->parametros[1] = 4;
+                return J;
+            }
         }
-        
-        else siguienteJugador = jugador - 1;
-        
-
     }
 
 
@@ -461,24 +512,22 @@ jugada* Jugar(char *cartaLast, int jugador, mazo* Mazo){
             strcpy(Mano->cartas[i],"");
             strcpy(Mano->cartas[i], cartaPull);
 
+            char* cartaDatos = analizarCarta(cartaPull);
+
             Mano->n_cartas += 1;
 
             strcpy(cartasEliminadas[eliminadasIndex],cartaPull);
             eliminadasIndex ++;
 
+            cartaPull = limpiarFormato(cartaPull);
             printf(" *** Sacando de mazo... ***\n%s\n\n", cartaPull);
-            puts("Presiona enter para continuar");
-            scanf("%c", &enter);
 
-            char* cartaDatos = analizarCarta(cartaPull);
-
-            //valida* Valida;
 
             int siguienteTmp = jugadaValida(Mazo, jugador, siguienteJugador, cartaDatos, LastDatos);
 
             if (siguienteTmp == -1) {
                 //pasa el turno
-                printf(" *** Sacando de mazo... ***\n%s\n\n", cartaPull);
+                puts("No se puede jugar la carta");
                 puts("Presiona enter para continuar");
                 scanf("%c", &enter);
             }
@@ -492,7 +541,7 @@ jugada* Jugar(char *cartaLast, int jugador, mazo* Mazo){
                 puts("Presiona enter para continuar");
                 scanf("%c", &enter);
 
-                strcpy(J->carta, Mano->cartas[opcion]);                             //BORRAR
+                strcpy(J->carta, Mano->cartas[opcion]);
 
             }
 
@@ -510,7 +559,6 @@ jugada* Jugar(char *cartaLast, int jugador, mazo* Mazo){
             int siguienteTmp = jugadaValida(Mazo, jugador, siguienteJugador, cartaDatos, LastDatos);
 
             if (siguienteTmp == -1) {
-                //invalido, debe sacar
                 //siguienteJugador = siguienteTmp;
 
                 puts(" *** Jugada no permitida. Se debe sacar otra carta del mazo ***\n");
@@ -567,75 +615,64 @@ jugada* Jugar(char *cartaLast, int jugador, mazo* Mazo){
         pushCarta(Mano, opcion, jugador);
     }
 
-    
+
     if (Mano->n_cartas > 1) J->parametros[0] = 0;
     else if (Mano->n_cartas == 1) J->parametros[0] = 1;
     else J->parametros[0] = 2;
     J->parametros[1] = siguienteJugador;
     //J->eliminadas = cartasEliminadas;      //falta implementar
-    
+
     free(Mano);
-    
-    /*
-    //enviar pipe a padre con carta y n_jugador siguiente
-    if (jugador == 0){
-
-    }
-    else{
-
-    }
-    */
+    puts("end mano");
     return J;
 }
-
 
 
 // Funcion de Juego del Player 1
 void jugadorPrincipal(mazo *Mazo){  // Funcion que controla al proceso Padre
 
     // Debe hacer la primera jugadada de la partida, e indicar los resultados
-    
-    
+
     char *primera = sintxt(primeraCarta);
     jugada *Jugada =  Jugar(primera, 0, Mazo);
- 
+
     info *Info = malloc(sizeof(info));
-    
+
     int index = 0;
     for (index = 0; index < 4; index++){
         Info->players[index] = 0;
     }
-    
+
 //  Realiza una "jugada fantasma" con la carta que se coloca en el pozo al azar al comienzo de la partida
 //  Esto porque si la primera carta salta el turno del jugador 1, se debe comenzar con otro jugador.
-    
-    
+
+
     //if (Jugada->n_eliminadas > 0) eliminarCartas(Mazo, Jugada->n_eliminadas, Jugada->eliminadas);
 
     int proxJugador = Jugada->parametros[1];
     int jugadorActual = 0, jugadores = 0;
 
     // Se obtiene a que jugador le toca el primer turno, y se ejecuta la funcion como es de esperarse.
-    
-    int enPartida = 1;
-    
-        
-    
-            // Los structs Jugada e Info contienen informacion relevante para coordinar las jugadas.
-            // Info permite indicar a qu? jugadores les queda 1 carta, m?s de 1, o ya ganaron.
-            // Jugada contiene 3 parametros. Cantidad de cartas (>1, 1 o 0), a quien le toca el siguiente turno
-            // Y el string con la ultima carta que se jug?.
-            
-            // Awante mandar structs por pipes c:  esta muy util
 
-    int *jugando = malloc(sizeof(int)), *recibiendo = malloc(sizeof(int)), clean = 0, cleaning = 0;
+    int enPartida = 1;
+
+
+
+        // Los structs Jugada e Info contienen informacion relevante para coordinar las jugadas.
+        // Info permite indicar a que jugadores les queda 1 carta, mas de 1, o ya ganaron.
+        // Jugada contiene 3 parametros. Cantidad de cartas (>1, 1 o 0), a quien le toca el siguiente turno
+        // Y el string con la ultima carta que se jugo.
+
+        // Awante mandar structs por pipes c:  esta muy util
+
+    int *jugando = malloc(sizeof(int)), *recibiendo = malloc(sizeof(int)), clean, cleaning = 0;
     jugando[0] = 1;
-    
+
     if (proxJugador == 1) recibiendo[0] = 0;
     else recibiendo[0] = 1;
-    
+
     while (enPartida == 1){
-         
+
         for (clean = 0; clean < 50 ; clean++){
             if (cleaning == 1) Jugada->carta[clean] = '.';
             else{
@@ -644,7 +681,7 @@ void jugadorPrincipal(mazo *Mazo){  // Funcion que controla al proceso Padre
             }
         }
         cleaning = 0;
-        
+
         if (proxJugador != 1){   // El caso en el que el turno es de otro jugador
 
             jugadorActual = Jugada->parametros[1];
@@ -676,7 +713,7 @@ void jugadorPrincipal(mazo *Mazo){  // Funcion que controla al proceso Padre
 
             // Esto signific que cuando le toca jugar a cualquiera que no sea el J1, se le envia la informacion que requiere
             // para hacer su movimiento, y devuelve por pipe la misma informacion, pero para el siguiente turno.
-        } 
+        }
 
         else{  // Le toca jugar al jugador 1.
 
@@ -685,7 +722,7 @@ void jugadorPrincipal(mazo *Mazo){  // Funcion que controla al proceso Padre
             Jugada = Jugar(Jugada->carta, 1, Mazo);
             Info->players[0] = Jugada->parametros[0];
 
-            
+
             // if (Jugada->n_eliminadas > 0) eliminarCartas(Mazo, Jugada->n_eliminadas, Jugada->eliminadas);
 
             for (jugadores = 1 ; jugadores < 5 ; jugadores++){
@@ -721,41 +758,41 @@ void jugadorPrincipal(mazo *Mazo){  // Funcion que controla al proceso Padre
 // No tiene tanto comentario porque es similar a lo del padre
 void jugadorPC(){
     int pipeJugador = 0; // Numero del pipe que se comunica con el Padre
-    
+
     if (getpid() == procesos[1]) pipeJugador = 1;   // Obtiene el numero del pipe que utiliza para recibir mensajes del padre
     else if (getpid() == procesos[2]) pipeJugador = 2;
     else if (getpid() == procesos[3]) pipeJugador = 3;
-    
-    
+
+
     int enPartida = 1, *play = malloc(sizeof(int)), *sent = malloc(sizeof(int));
     play[0] = 0;
     sent[0] = 0;
-    
+
     while (enPartida == 1){
-        
+
         if (play[0] == 1){
-        
+
             printf("\n\n%d: PROCESO\n\n", pipeJugador+1);
-            
+
             jugada *Jugada = malloc(sizeof(jugada));
             mazo *Mazo = malloc(sizeof(mazo));
             info *Info = malloc(sizeof(info));
 
             read(pipes[pipeJugador][0], Jugada, sizeof(jugada)); // Recibe la informacion enviada por el padre
-            read(pipes[pipeJugador][0],   Mazo, sizeof(mazo));  
+            read(pipes[pipeJugador][0],   Mazo, sizeof(mazo));
             read(pipes[pipeJugador][0],   Info, sizeof(info));
-            
+
             int jugadores = 0;
-            
+
             for (jugadores = 0 ; jugadores < 4 ; jugadores++){
 
                 if((Info->players[jugadores] == 1) && (jugadores != pipeJugador))
                     printf("P%d: El jugador %d tiene 1 sola carta!\n", pipeJugador+1, jugadores+1);
 
-                else if (Info->players[jugadores] == 2){ 
+                else if (Info->players[jugadores] == 2){
                     if (jugadores == pipeJugador) printf("P%d: Has ganado!\n", jugadores+1);
 
-                    else{ 
+                    else{
                         printf("P%d: Ha ganado el jugador %d!\n", pipeJugador+1, jugadores+1);
                         exit(1);
                     }
@@ -770,7 +807,7 @@ void jugadorPC(){
             Info->players[pipeJugador] = Jugada->parametros[0];
 
             // Realiza su jugada y le informa al proceso padre el resultado y a quien le toca jugar ahora.
-            
+
             write(pipes[0][1], sent, sizeof(int));
             write(pipes[0][1], Jugada, sizeof(jugada));
             write(pipes[0][1], Mazo, sizeof(mazo));
@@ -787,14 +824,14 @@ void jugadorPC(){
 
 
 int main(){
- 
+
     int restaurar = 0, jugador, carta, index;
- 
-    
+
+
     for (index = 0 ; index < 4 ; index++){
         pipe(pipes[index]);
     }
-    
+
     if (restaurar != 1){
         directorio = opendir("Juego");
         if (directorio) system("rm -r Juego");
@@ -803,22 +840,22 @@ int main(){
     closedir(directorio);
 
     mazo *Mazo = leerMazo();
-    
+
     // Se asignan las cartas a las manos de cada jugador.
     for(jugador = 1; jugador <= 4; jugador++){
         for(carta = 0; carta < 7; carta++){
             free(randPull(Mazo, 0, jugador));
         }
     }
-    
+
     printf("\n\t***  Se le han asignado 7 cartas a cada jugador, y se ha colocado una en el pozo ***\n\n\n");
     sleep(1);
     //pozo
     free(randPull(Mazo, 1, -1));
-      
+
     int proceso, contador;  // Se crea un array para los PIDs de cada uno de los procesos
     procesos[0] = getpid(); // la primera posicion del arreglo es el PID del padre
-    
+
     for (contador = 0 ; contador < 3 ; contador++){
         proceso = fork();
         if (proceso == 0){
@@ -827,21 +864,21 @@ int main(){
         }
         else procesos[contador+1] = proceso;
     }
-    
+
     // CONFIGURACION DE PIPES
     /*
 
      Se utilizan 4 pipes, guardados en un arreglo global, llamados Pipes[0], ... , Pipes[3]
-     
+
      Todos los hijos escriben en Pipes[0], y el padre solo lee ese
      Ademas, el padre posee un 3 pipes, con los que se comunica con los 3 hijos Pipe1: P-h1, Pipe2: P-h2, Pipe3: P-h3
-    
+
     */
     if (getpid() == procesos[0]){   // Cierra los pipes que el padre no utiliza.
         for (index = 1; index < 4 ; index++) close(pipes[index][0]);
         close(pipes[0][1]);
     }
-    
+
     else if (getpid() == procesos[1]){  // Cierra los pipes que el hijo 1 no utiliza
         for (index = 0 ; index < 4 ; index++){
             if (index == 0) close(pipes[0][0]);
@@ -852,7 +889,7 @@ int main(){
             }
         }
     }
-            
+
     else if (getpid() == procesos[2]){ // Cierra los pipes que el hijo 2 no utiliza
         for (index = 0 ; index < 4 ; index++){
             if (index == 0) close(pipes[0][0]);
@@ -862,7 +899,7 @@ int main(){
                 close(pipes[index][1]);
             }
         }
-    }    
+    }
 
     else if (getpid() == procesos[3]){  // Cierra los pipes que el hijo 3 no utiliza
         for (index = 0 ; index < 4 ; index++){
@@ -874,18 +911,17 @@ int main(){
             }
         }
     }
-    
-    // El padre se env?a a la funcion jugadorPrincipal
+
+    // El padre se envia a la funcion jugadorPrincipal
     if (getpid() == procesos[0]){
         jugadorPrincipal(Mazo);
         free(Mazo);
     }
-    
     // Cada uno de los hijos se envian a jugadorPC
     else{
         free(Mazo);
         jugadorPC();
-    }       
+    }
     //terminarPartida();
     return 0;
 }
