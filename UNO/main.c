@@ -293,26 +293,29 @@ void pushCarta(mazo* Mano, int cartaIndex, int jugador){
 }
 
 
-int jugadaValida(mazo* Mazo, int jugador, int siguienteJugador, char* cartaDatos, char* LastDatos){
+int next(int jugador, int caso){
 
-    //negra
-    if (cartaDatos[0] == '0'){
+    int siguienteJugador;
 
-        puts("Elegir nuevo color: \n");
-        puts("[1] Rojo");
-        puts("[2] Azul");
-        puts("[3] Verde");
-        puts("[4] Amarillo");
-        scanf(" %d", &nuevoColor);
+    switch(caso){
 
-        //+4
-        if (cartaDatos[1] == '5'){
-
-            int c;
-            for (c = 0; c < 4; c++){
-                randPull(Mazo, 0, siguienteJugador);
+        //normal
+        case 0:
+            if (orientacion == 0){
+                if (jugador == 4) siguienteJugador = 1;
+                else siguienteJugador = jugador + 1;
+                puts("heeeey");
+                printf("%d\n", jugador);
             }
 
+            else{
+                if (jugador == 1) siguienteJugador = 4;
+                else siguienteJugador = jugador - 1;
+            }
+            break;
+
+        //salto
+        case 1:
             if (orientacion == 0){
                 if (jugador < 3) siguienteJugador = jugador + 2;
                 else if (jugador == 3) siguienteJugador = 1;
@@ -323,13 +326,64 @@ int jugadaValida(mazo* Mazo, int jugador, int siguienteJugador, char* cartaDatos
                 if (jugador > 2) siguienteJugador = jugador - 2;
                 else if (jugador == 2) siguienteJugador = 4;
                 else siguienteJugador = 3;
-
             }
+            break;
+
+        //reversa
+        case 2:
+            if (orientacion == 0){
+                orientacion = -1;
+
+                if (jugador == 1) siguienteJugador = 4;
+                else siguienteJugador = jugador - 1;
+            }
+
+            else{
+                orientacion = 0;
+
+                if (jugador == 4) siguienteJugador = 1;
+                else siguienteJugador = jugador + 1;
+            }
+            break;
+
+    }
+
+    return siguienteJugador;
+
+}
+
+
+//comprueba que la carta jugada cumpla con las condiciones del juego
+//se retorna el siguiente jugador correspondiente
+int jugadaValida(mazo* Mazo, int jugador, int siguienteJugador, char* cartaDatos, char* LastDatos){
+
+    //negra
+    if (cartaDatos[0] == '0'){
+
+        if (jugador != 0){                  //en caso que a jugador 0 le salga, el 1 pone cualquier carta
+            puts("Elegir nuevo color: \n");
+            puts("[1] Rojo");
+            puts("[2] Azul");
+            puts("[3] Verde");
+            puts("[4] Amarillo");
+            scanf(" %d", &nuevoColor);
+        }
+
+        //+4
+        if (cartaDatos[1] == '5'){
+
+            int c;
+            for (c = 0; c < 4; c++){
+                randPull(Mazo, 0, siguienteJugador);
+            }
+
+            siguienteJugador = next(jugador, 1);
         }
 
         //comodin
         else if (cartaDatos[1] == '2'){
             //no pasa nada en realidad jsj
+            siguienteJugador = next(jugador, 0);
         }
 
         return siguienteJugador;
@@ -349,43 +403,10 @@ int jugadaValida(mazo* Mazo, int jugador, int siguienteJugador, char* cartaDatos
         printf("NC: %d\n", nuevoColor);
 
         //Reversa
-        if (cartaDatos[1] == '1'){
-
-            if (orientacion == 0){
-
-                orientacion = -1;
-
-                if (jugador == 1) siguienteJugador = 4;
-                else siguienteJugador = jugador - 1;
-
-            }
-
-            else{
-
-                orientacion = 0;
-
-                if (jugador == 4) siguienteJugador = 1;
-                else siguienteJugador = jugador + 1;
-
-            }
-        }
+        if (cartaDatos[1] == '1') siguienteJugador = next(jugador, 2);
 
         //Bloqueo
-        else if (cartaDatos[1] == '3'){
-            //printf("%d\n", siguienteJugador);
-
-            if (orientacion == 0){
-                if (jugador < 3) siguienteJugador = jugador + 2;
-                else if (jugador == 3) siguienteJugador = 1;
-                else siguienteJugador = 2;
-            }
-
-            else{
-                if (jugador > 2) siguienteJugador = jugador - 2;
-                else if (jugador == 2) siguienteJugador = 4;
-                else siguienteJugador = 3;
-            }
-        }
+        else if (cartaDatos[1] == '3') siguienteJugador = next(jugador, 1);
 
         //+2
         else if (cartaDatos[1] == '4'){
@@ -393,11 +414,14 @@ int jugadaValida(mazo* Mazo, int jugador, int siguienteJugador, char* cartaDatos
             for (c = 0; c < 2; c++){
                 randPull(Mazo, 0, siguienteJugador);
             }
+            siguienteJugador = next(jugador, 0);
         }
-        else{
 
+        else{
+             siguienteJugador = next(jugador, 0);
         }
-        printf("%d\n", siguienteJugador);
+
+        printf("SJ: %d\n", siguienteJugador);
         return siguienteJugador;
     }
 
@@ -412,17 +436,11 @@ jugada* Jugar(char *cartaLast, int jugador, mazo* Mazo){
     //tipo carta : 0 = numero, 1 = reversa, 2 = comodin, 3 = bloqueo, 4 = +2, 5 = +4
     //color : 0 = negro, 1 = rojo, 2 = azul, 3 = verde, 4 = amarillo
 
-    //jugador == 0
-    //dependiendo de condiciones enviar pipe a siguiente jugador o dejar jugar a 1
-
 
     int siguienteJugador;
 
 //mano de jugador actual
     mazo* Mano = malloc(sizeof(mazo));
-
-    char cartasEliminadas[108][50];            //asignarle strings vacios???
-    int eliminadasIndex = 0;
 
 //struct a retornar
     jugada* J = malloc(sizeof(jugada));
@@ -430,6 +448,26 @@ jugada* Jugar(char *cartaLast, int jugador, mazo* Mazo){
 
     cartaLast = limpiarFormato(cartaLast);
 
+    //analisis ultima jugada
+    char *LastDatos = analizarCarta(cartaLast);
+
+    if (jugador == 0){
+
+        siguienteJugador = jugadaValida(Mazo, 0, 1, LastDatos, LastDatos);
+
+        free(LastDatos);
+        free(Mano);
+
+        if (orientacion == 0){
+            J->parametros[0] = 1;
+            J->parametros[1] = siguienteJugador;
+        }
+        else{
+            J->parametros[0] = 4;
+            J->parametros[1] = siguienteJugador;
+        }
+        return J;
+    }
 
     struct dirent *dir;
 
@@ -441,7 +479,7 @@ jugada* Jugar(char *cartaLast, int jugador, mazo* Mazo){
     strcat(dirMano, strJ);
     directorio = opendir(dirMano);
 
-    if (jugador != 0) printf("\nUltima jugada: \n%s\n\n", cartaLast);
+    printf("\nUltima jugada: \n%s\n\n", cartaLast);
 
 //imprimir cartas de la mano y registrarlas en arreglo
     int i = 0;
@@ -466,37 +504,11 @@ jugada* Jugar(char *cartaLast, int jugador, mazo* Mazo){
 
     Mano->n_cartas = i;
 
-    if (jugador != 0){
-        printf(" [%d] %s\n", i, "Sacar de mazo");
-        printf(" [%d] %s\n", i + 1, "Pasar");
-    }
-
-//analisis ultima jugada
-    char *LastDatos = analizarCarta(cartaLast);
-
-//si la carta es reversa
-    if (LastDatos[3] == '0'){       //CONSULTAR //y tambien cuando sale un +2 no le afecta a Jugador1
-
-        if (jugador == 0){
-            free(Mano);
-            J->parametros[0] = 1;
-            J->parametros[1] = 1;
-            return J;
-        }
-
-        else{
-
-            if (jugador == 0){
-                free(Mano);
-                J->parametros[0] = 4;
-                J->parametros[1] = 4;
-                return J;
-            }
-        }
-    }
+    printf(" [%d] %s\n", i, "Sacar de mazo");
+    printf(" [%d] %s\n", i + 1, "Pasar");
 
 
-    printf("\nJ%d*** ELEGIR CARTA (segun indice)***\n", jugador);
+    printf("\nJ%d *** ELEGIR CARTA (segun indice)***\n", jugador);
 
     int opcion, opcionValida = 0;
     scanf(" %d", &opcion);
@@ -521,8 +533,6 @@ jugada* Jugar(char *cartaLast, int jugador, mazo* Mazo){
 
             Mano->n_cartas += 1;
 
-            strcpy(cartasEliminadas[eliminadasIndex],cartaPull);
-            eliminadasIndex ++;
 
             cartaPull = limpiarFormato(cartaPull);
             printf(" *** Sacando de mazo... ***\n%s\n\n", cartaPull);
@@ -538,6 +548,7 @@ jugada* Jugar(char *cartaLast, int jugador, mazo* Mazo){
             }
 
             else{
+
                 siguienteJugador = siguienteTmp;
                 Mano->n_cartas -=1;
 
@@ -547,7 +558,6 @@ jugada* Jugar(char *cartaLast, int jugador, mazo* Mazo){
                 scanf("%c", &enter);
 
                 strcpy(J->carta, Mano->cartas[opcion]);
-
             }
 
             free(cartaPull);
@@ -564,7 +574,6 @@ jugada* Jugar(char *cartaLast, int jugador, mazo* Mazo){
             int siguienteTmp = jugadaValida(Mazo, jugador, siguienteJugador, cartaDatos, LastDatos);
 
             if (siguienteTmp == -1) {
-                //siguienteJugador = siguienteTmp;
 
                 puts(" *** Jugada no permitida. Se debe sacar otra carta del mazo ***\n");
                 sleep(1);
@@ -572,9 +581,6 @@ jugada* Jugar(char *cartaLast, int jugador, mazo* Mazo){
                 char* cartaPull = randPull(Mazo, 0, jugador);
                 strcpy(Mano->cartas[Mano->n_cartas], cartaPull);
                 Mano->n_cartas += 1;
-
-                strcpy(cartasEliminadas[eliminadasIndex],cartaPull);
-                eliminadasIndex ++;
 
 
                 printf(" *** Sacando de mazo... ***\n%s\n", cartaPull);
@@ -624,8 +630,8 @@ jugada* Jugar(char *cartaLast, int jugador, mazo* Mazo){
     if (Mano->n_cartas > 1) J->parametros[0] = 0;
     else if (Mano->n_cartas == 1) J->parametros[0] = 1;
     else J->parametros[0] = 2;
+
     J->parametros[1] = siguienteJugador;
-    //J->eliminadas = cartasEliminadas;      //falta implementar
 
     free(Mano);
     puts("end mano");
@@ -739,7 +745,7 @@ void jugadorPrincipal(mazo *Mazo){  // Funcion que controla al proceso Padre
                 }
             }
 
-            // Si le toca jugar al jugador 1, realiza su jugada y luego le env?a los resultados al jugador que sigue.
+            // Si le toca jugar al jugador 1, realiza su jugada y luego le envia los resultados al jugador que sigue.
 
             Jugada->parametros[2] = jugadorActual;
             proxJugador = Jugada->parametros[1];
@@ -855,6 +861,7 @@ int main(){
 
     printf("\n\t***  Se le han asignado 7 cartas a cada jugador, y se ha colocado una en el pozo ***\n\n\n");
     sleep(1);
+
     //pozo
     free(randPull(Mazo, 1, -1));
 
