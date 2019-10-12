@@ -313,19 +313,28 @@ int jugadaValida(mazo* Mazo, int jugador, int siguienteJugador, char* cartaDatos
                 randPull(Mazo, 0, siguienteJugador);
             }
 
-            siguienteJugador = jugador + 2;
+            if (orientacion == 0){
+                if (jugador < 3) siguienteJugador = jugador + 2;
+                else if (jugador == 3) siguienteJugador = 1;
+                else siguienteJugador = 2;
+            }
+
+            else{
+                if (jugador > 2) siguienteJugador = jugador - 2;
+                else if (jugador == 2) siguienteJugador = 4;
+                else siguienteJugador = 3;
+
+            }
         }
 
         //comodin
         else if (cartaDatos[1] == '2'){
-
             //no pasa nada en realidad jsj
         }
 
         return siguienteJugador;
     }
 
-//
 
 //infoCarta = color + tipo carta + numero + orientacion
 //tipo carta : 0 = numero, 1 = reversa, 2 = comodin, 3 = bloqueo, 4 = +2, 5 = +4
@@ -363,22 +372,18 @@ int jugadaValida(mazo* Mazo, int jugador, int siguienteJugador, char* cartaDatos
 
         //Bloqueo
         else if (cartaDatos[1] == '3'){
-            printf("%s\n", siguienteJugador);
+            //printf("%d\n", siguienteJugador);
 
             if (orientacion == 0){
-
                 if (jugador < 3) siguienteJugador = jugador + 2;
                 else if (jugador == 3) siguienteJugador = 1;
                 else siguienteJugador = 2;
-
             }
 
             else{
-
                 if (jugador > 2) siguienteJugador = jugador - 2;
                 else if (jugador == 2) siguienteJugador = 4;
                 else siguienteJugador = 3;
-
             }
         }
 
@@ -392,7 +397,7 @@ int jugadaValida(mazo* Mazo, int jugador, int siguienteJugador, char* cartaDatos
         else{
 
         }
-
+        printf("%d\n", siguienteJugador);
         return siguienteJugador;
     }
 
