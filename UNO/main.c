@@ -618,7 +618,7 @@ jugada* Jugar(char *cartaLast, int jugador, mazo* Mazo){
     }
 
     if (siguienteJugador == 999){
-        siguienteJugador = jugador - 2*orientacion + 1;
+        siguienteJugador = jugador + 2*orientacion + 1;
         if (siguienteJugador == 5) siguienteJugador = 1;
         else if (siguienteJugador == 0) siguienteJugador = 4;
     }
