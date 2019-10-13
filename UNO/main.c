@@ -670,12 +670,12 @@ jugada* Jugar(char *cartaLast, int jugador, mazo* Mazo){
             for (i = 0; i < Mano->n_cartas; i++){
                 printf(" [%d] %s\n", i, Mano->cartas[i]);
             }
+            
             printf(" [%d] %s\n", i, "Sacar de mazo");
             printf(" [%d] %s\n", i + 1, "Pasar");
-
             printf("\nUltima jugada: \n%s\n", cartaLast);
-
             puts("\nOpcion invalida");
+            
             opcionValida = 0;
 
             puts("Elegir opcion");
@@ -727,9 +727,6 @@ void jugadorPrincipal(mazo *Mazo){  // Funcion que controla al proceso Padre
     
 //  Realiza una "jugada fantasma" con la carta que se coloca en el pozo al azar al comienzo de la partida
 //  Esto porque si la primera carta salta el turno del jugador 1, se debe comenzar con otro jugador.
-    
-    
-    //if (Jugada->n_eliminadas > 0) eliminarCartas(Mazo, Jugada->n_eliminadas, Jugada->eliminadas);
 
     int proxJugador = Jugada->parametros[1];
     int jugadorActual = 0, jugadores = 0;
