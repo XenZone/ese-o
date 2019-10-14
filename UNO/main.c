@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include <errno.h>
 #include <dirent.h>
 #include <time.h>
 
@@ -37,9 +36,7 @@ char primeraCarta[50];
 
 // Struct para el guardado de las cartas. Tiene espacio como para las 108 cartas del juego.
 
-
 DIR *directorio;
-
 
 /*
  Funcion Setup:  No recibe ni retorna nada.
@@ -96,9 +93,10 @@ void setup(){
         fclose(carta);
         strcpy(buffer, "");
         }
+
     system("clear");
 
-    puts("\n\n\t    __/\\\\\\________/\\\\\\__/\\\\\\\\_____/\\\\\\_______/\\\\\\\\\\______        ");
+    puts("\n\n\t    __/\\\\\\________/\\\\\\__/\\\\\\\\______/\\\\\\_______/\\\\\\\\\\______        ");
     puts("\t     _\\/\\\\\\_______\\/\\\\\\_\\/\\\\\\\\\\\\___\\/\\\\\\_____/\\\\\\///\\\\\\____       ");
     puts("\t      _\\/\\\\\\_______\\/\\\\\\_\\/\\\\\\/\\\\\\__\\/\\\\\\___/\\\\\\/__\\///\\\\\\__      ");
     puts("\t       _\\/\\\\\\_______\\/\\\\\\_\\/\\\\\\//\\\\\\_\\/\\\\\\__/\\\\\\______\\//\\\\\\_     ");
@@ -113,9 +111,9 @@ void setup(){
     puts("\t\t\t\t\t\t.");
     sleep(1);
     puts("\t\t\t\t\t\t.");
-    sleep(1);
+    sleep(0.5);
     printf("\n\t\t\t *** Se han creado 108 cartas en el mazo ***\n\n");
-    sleep(1);
+    sleep(0.5);
     }
 
 
@@ -702,6 +700,7 @@ jugada* Jugar(char *cartaLast, int jugador, mazo* Mazo){
     J->parametros[1] = siguienteJugador;
    
     free(Mano);
+    puts("\n\n");
     return J;
 }
 
@@ -774,6 +773,7 @@ void jugadorPrincipal(mazo *Mazo){  // Funcion que controla al proceso Padre
             while (recibiendo[0] != 0){
                 if (recibiendo[0] == 1){
                     read(pipes[0][0], recibiendo, sizeof(int));
+                    iWin = 0;
                     // Se mantiene en un loop "en espera", y asi evita seguir ejecutandose hasta que los hijos esten listos.
                     // Se puede recibir 0 o 2.
                         // Con 0 se termina el loop de espera, y se continua la ejecucion normal del juego
@@ -782,9 +782,12 @@ void jugadorPrincipal(mazo *Mazo){  // Funcion que controla al proceso Padre
                 
                 if (recibiendo[0] == 2){  // Se utiliza if por si el estado cambia en el read anterior.
                     
-                    if (iWin == 0) read(pipes[0][0], Info, sizeof(info));
+                    if (iWin == 0){                         
+                        read(pipes[0][0], Info, sizeof(info));
+                        read(pipes[0][0], Mazo, sizeof(Mazo));
+                    }
                     
-                    int ganador = 0;
+                    int ganador = 99;
                     
                     for (jugadores = 1 ; jugadores < 4 ; jugadores++){
                         if (Info->players[jugadores] == 2){ 
@@ -792,16 +795,14 @@ void jugadorPrincipal(mazo *Mazo){  // Funcion que controla al proceso Padre
                             ganador = jugadores+1;
                         }
                     }
+                    
                     if (Info->players[0] == 2){ 
                         printf("P1: He ganado!\n");
                         ganador = 1;
                     }
                     
-                    else if (Mazo->n_cartas == 0){
-                        ganador = 99;
+                    else if (Mazo->n_cartas < 1 || ganador == 99)
                         printf("P1: El mazo se quedo sin cartas!.\n");
-                    }
-                            
                     
                     // Mensaje de que el juego termino, enviado a todos los procesos hijos.
                     write(pipes[1][1], recibiendo, sizeof(int));
@@ -839,7 +840,8 @@ void jugadorPrincipal(mazo *Mazo){  // Funcion que controla al proceso Padre
         } 
 
         else{  // Le toca jugar al jugador 1.
-
+            
+            
             if (Info->players[0] == 1)
                 printf("P1: Solo tengo una carta!\n"); 
                         // Primero revisa si le queda una sola carta
@@ -864,7 +866,7 @@ void jugadorPrincipal(mazo *Mazo){  // Funcion que controla al proceso Padre
                 iWin = 1;
             }
                 
-            if (Mazo->n_cartas == 0)  // Si el mazo queda vac?o luego de la jugada, debe terminar
+            if (Mazo->n_cartas < 1)  // Si el mazo queda vac?o luego de la jugada, debe terminar
                 recibiendo[0] = 2;
             
             Jugada->parametros[4] = nuevoColor;
@@ -930,7 +932,6 @@ void jugadorPC(){
                           // por lo que se guarda la carta actual en una variable del proceso.
 
             Jugada = Jugar(carta, pipeJugador + 1, Mazo);
-           // if (Jugada->n_eliminadas > 0) eliminarCartas(Mazo, Jugada->n_eliminadas, Jugada->eliminadas);
             
             Jugada->parametros[4] = nuevoColor;
             Jugada->parametros[3] = orientacion;
@@ -942,6 +943,20 @@ void jugadorPC(){
                 sent[0] = 2;
                 write(pipes[0][1], sent, sizeof(int));
                 write(pipes[0][1], Info, sizeof(info));
+                write(pipes[0][1], Mazo, sizeof(mazo));
+                
+                free(Info);
+                free(Jugada);
+                free(Mazo);
+                play[0] = 0;
+            }
+            
+            else if (Mazo->n_cartas < 1){
+                sent [0] = 2;
+                write(pipes[0][1], sent, sizeof(int));
+                write(pipes[0][1], Info, sizeof(info));
+                write(pipes[0][1], Mazo, sizeof(mazo));
+                
                 free(Info);
                 free(Jugada);
                 free(Mazo);
@@ -970,7 +985,8 @@ void jugadorPC(){
                 if (play[0] != 99){
                     if (play[0] != pipeJugador+1)
                         printf("P%d: Ha ganado el jugador %d!\n", pipeJugador+1, play[0]);
-                    else if (play[0] == pipeJugador+1) printf("P%d: He ganado!\n", pipeJugador+1);
+                    else if (play[0] == pipeJugador+1) 
+                        printf("P%d: He ganado!\n", pipeJugador+1);
                 }
                 else if (play[0] == 99)
                     printf("P%d: El mazo se quedo sin cartas!.\n", pipeJugador+1);
