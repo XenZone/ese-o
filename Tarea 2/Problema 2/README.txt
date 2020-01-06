@@ -13,6 +13,8 @@ Se incluye:
 Para ejecutar el programa se debe tener un archivo llamado "input.txt" como el incluido.
 Debe contener numeros separados por espacio.
 
+Luego, para correr el programa se debe usar el comando "java Problema2"
+
 El programa mostrará por pantalla los numeros que se ingresaron, en el orden ingresado, y luego se mostrará
 el resultado ordenado de mayor a menor.
 
